@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ASRA | پیام‌رسان امن</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <audio id="send-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
+    <audio id="receive-sound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3" preload="auto"></audio>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { vazir: ['Vazirmatn', 'sans-serif'] },
+                    colors: { brand: 'var(--brand-color)', darkbg: '#0f0f0f', cardbg: '#1a1a1a', borderc: '#2a2a2a' }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root { --brand-color: #eab308; }
+        .theme-teal { --brand-color: #14b8a6; }
+        .theme-purple { --brand-color: #8b5cf6; }
+        .theme-pink { --brand-color: #f43f5e; }
+        .theme-orange { --brand-color: #f97316; }
+
+        body { font-family: 'Vazirmatn', sans-serif; background-color: #0f0f0f; color: #ffffff; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
+        body.light-mode { background-color: #fcfaf8; color: #1a1a1a; }
+        body.light-mode .bg-cardbg { background-color: #ffffff; border-color: #e5e7eb; }
+        body.light-mode .text-gray-300, body.light-mode .text-gray-400 { color: #4b5563; }
+        body.light-mode .bg-darkbg { background-color: #fcfaf8; }
+        body.light-mode .top-bar { background-color: #fcfaf8; border-color: #e5e7eb; color: #1a1a1a; }
+
+        .page { display: none; height: 100vh; width: 100%; max-width: 28rem; overflow: hidden; flex-direction: column; position: relative; margin: auto; background: #0f0f0f; color: white; }
+        body.light-mode .page { background: #fcfaf8; color: #1a1a1a; }
+        .page.active { display: flex; }
+        
+        .top-bar { background-color: #0f0f0f; border-bottom: 1px solid #2a2a2a; color: white; }
+
+        .btn-primary { background-color: var(--brand-color); color: #000; padding: 12px 24px; border-radius: 8px; font-weight: bold; transition: background-color 0.2s; }
+        .btn-primary:disabled { background-color: #2a2a2a; color: #888; cursor: not-allowed; }
+        .otp-input { width: 100%; height: 3.5rem; text-align: center; font-size: 1.5rem; border-radius: 0.5rem; background-color: #1a1a1a; border: 1px solid #2a2a2a; color: white; outline: none; letter-spacing: 0.5rem; }
+        .bottom-sheet { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .bottom-sheet.open { transform: translateY(0); }
+        .toast { transform: translateY(20px); opacity: 0; transition: all 0.3s; pointer-events: none; }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        #splash-screen { position: fixed; inset: 0; background: #0f0f0f; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s ease-out; }
+        #splash-screen.hidden { opacity: 0; pointer-events: none; }
+        
+        .msg-bubble { max-width: 85%; padding: 10px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5; word-break: break-word; }
+        .msg-me { background: var(--brand-color); color: #000; border-top-right-radius: 2px; align-self: flex-start; }
+        .msg-other { background: #1a1a1a; color: #fff; border-top-left-radius: 2px; align-self: flex-end; }
+        .media-preview { max-width: 100%; border-radius: 10px; margin-top: 5px; cursor: pointer; max-height: 200px; object-fit: cover; }
+        
+        #call-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #remote-video { width: 100%; height: 100%; object-fit: cover; position: absolute; }
+        #local-video { width: 100px; height: 150px; position: absolute; bottom: 20px; right: 20px; border: 2px solid var(--brand-color); z-index: 10; object-fit: cover; border-radius: 10px; }
+    </style>
+</head>
+<body class="antialiased h-screen flex justify-center">
+
+    <div id="splash-screen">
+        <img src="https://s6.uupload.ir/files/inshot_20261106_051038499_722.png" alt="ASRA Logo" class="w-32 h-32 object-contain mb-8">
+        <h1 class="text-3xl font-black text-white">ASRA</h1>
+        <p class="text-gray-500 text-sm mt-2">پیام‌رسان امن</p>
+        <div class="mt-8 w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <!-- صفحه ۱: قوانین -->
+    <div id="page-rules" class="page active overflow-y-auto">
+        <header class="top-bar flex items-center justify-between p-4 shrink-0">
+            <button onclick="goBackFromRules()" class="text-white"><i class="fa-solid fa-arrow-right"></i></button>
+            <img src="https://s6.uupload.ir/files/inshot_20261106_051038499_722.png" alt="ASRA Logo" class="h-8 object-contain">
+            <div class="w-6"></div>
+        </header>
+        <main class="flex-1 flex flex-col px-6 py-4">
+            <h2 class="text-xl font-bold text-center mb-6 text-brand">قوانین و مقررات</h2>
+            <div class="flex-1 overflow-y-auto text-sm text-gray-300 leading-7 mb-6 pr-2">
+                <p>به ASRA خوش آمدید. استفاده شما از این پیام‌رسان به منزله پذیرش کامل این قوانین است.</p>
+                <h2 class="text-white font-bold mt-4 mb-2">۱. شرایط حساب کاربری</h2>
+                <p>شما باید حداقل ۱۸ سال سن داشته باشید. مسئولیت حفظ امنیت حساب و کد تایید بر عهده شماست.</p>
+                <h2 class="text-white font-bold mt-4 mb-2">۲. حریم خصوصی</h2>
+                <p>ما تنها اطلاعات ضروری را جمع‌آوری می‌کنیم. دسترسی به چت‌های خصوصی تنها با حکم قضایی ممکن است.</p>
+            </div>
+            
+            <div id="rules-accept-section" class="flex items-center gap-3 p-4 bg-cardbg border border-borderc rounded-xl mb-6 shrink-0">
+                <input type="checkbox" id="accept-rules" class="w-6 h-6 rounded border-2 border-gray-500 bg-darkbg text-brand" onchange="document.getElementById('btn-accept-rules').disabled = !this.checked">
+                <label for="accept-rules" class="text-sm text-gray-300 cursor-pointer">قوانین را می‌پذیرم.</label>
+            </div>
+            <button id="btn-accept-rules" disabled onclick="goTo('login')" class="btn-primary w-full mb-6">ادامه</button>
+        </main>
+    </div>
+
+    <!-- صفحه ۲: ورود (فقط نام کاربری) -->
+    <div id="page-login" class="page">
+        <header class="top-bar flex items-center justify-center p-4 shrink-0">
+            <img src="https://s6.uupload.ir/files/inshot_20261106_051038499_722.png" alt="ASRA Logo" class="h-10 object-contain">
+        </header>
+        <main class="flex-1 flex flex-col items-center pt-10 px-6">
+            <h2 class="text-2xl font-bold mb-2">ورود به ASRA</h2>
+            <p class="text-gray-400 text-sm text-center mb-8">لطفاً نام کاربری خود را وارد کنید.</p>
+            
+            <div class="w-full mb-8">
+                <input type="text" id="username-input" placeholder="Username" class="w-full p-3 border border-[#2a2a2a] rounded-lg bg-[#1a1a1a] text-white text-center focus:outline-none focus:border-brand" dir="ltr">
+            </div>
+            
+            <button id="btn-next" onclick="App.login()" class="btn-primary w-full">ورود</button>
+        </main>
+    </div>
+
+    <!-- صفحه ۵: صفحه اصلی -->
+    <div id="page-main" class="page">
+        <header class="flex items-center justify-between p-4 shrink-0 border-b border-borderc/50">
+            <div class="flex items-center gap-3">
+                <img id="main-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-11 h-11 rounded-full border border-gray-600 object-cover" onclick="goTo('profile')">
+                <div class="flex flex-col"><span id="main-name" class="text-sm font-bold text-white">نام شما</span><span id="main-username" class="text-[10px] text-gray-400">@username</span></div>
+            </div>
+            <img src="https://s6.uupload.ir/files/inshot_20261106_051038499_722.png" alt="ASRA" class="h-8 object-contain">
+            <button onclick="openModal('add-contact')" class="w-10 h-10 rounded-full bg-brand text-black flex items-center justify-center"><i class="fa-solid fa-plus"></i></button>
+        </header>
+        <div class="px-4 py-2 flex gap-2 border-b border-borderc shrink-0">
+            <button id="tab-chats" class="flex-1 py-2 text-sm font-bold text-brand border-b-2 border-brand">چت‌ها</button>
+        </div>
+        <main class="flex-1 overflow-y-auto pb-24 relative">
+            <div id="content-chats" class="p-2"><p class="text-center text-gray-500 mt-10">هنوز چتی ندارید.</p></div>
+        </main>
+    </div>
+
+    <!-- صفحه ۶: چت -->
+    <div id="page-chat" class="page">
+        <header class="flex items-center justify-between p-4 border-b border-borderc z-10 shrink-0">
+            <button onclick="goTo('main')" class="text-gray-400"><i class="fa-solid fa-chevron-right text-xl"></i></button>
+            <h2 class="font-bold text-sm" id="chat-user-name">کاربر</h2>
+            <div class="flex gap-4">
+                <button onclick="App.startCall('audio')" class="text-gray-400"><i class="fa-solid fa-phone"></i></button>
+                <button onclick="App.startCall('video')" class="text-gray-400"><i class="fa-solid fa-video"></i></button>
+            </div>
+        </header>
+        <main class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-darkbg" id="chat-messages"></main>
+        <div class="p-3 border-t border-borderc bg-darkbg">
+            <div class="flex items-center gap-3">
+                <button onclick="document.getElementById('file-input').click()" class="text-gray-400"><i class="fa-solid fa-paperclip text-xl"></i></button>
+                <input type="file" id="file-input" class="hidden" accept="image/*,video/*" onchange="App.handleFileSelect(event)">
+                <button onclick="App.sendLocation()" class="text-gray-400"><i class="fa-solid fa-location-dot text-xl"></i></button>
+                <input type="text" id="chat-input" placeholder="پیام..." class="flex-1 bg-cardbg border border-borderc rounded-2xl p-3 text-sm focus:outline-none text-white" onkeypress="if(event.key==='Enter') App.sendMessage()">
+                <button onclick="App.sendMessage()" class="p-2 text-brand"><i class="fa-solid fa-paper-plane text-lg"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- صفحه ۷: پروفایل -->
+    <div id="page-profile" class="page">
+        <header class="flex items-center justify-between p-6 shrink-0"><button onclick="goTo('main')" class="text-gray-400"><i class="fa-solid fa-chevron-right text-xl"></i></button><h1 class="font-bold">پروفایل</h1><div class="w-6"></div></header>
+        <main class="flex-1 overflow-y-auto pb-10">
+            <div class="flex flex-col items-center pt-4 pb-6">
+                <img id="profile-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-28 h-28 rounded-[36px] border-4 border-brand mb-4 object-cover">
+                <h2 id="profile-name" class="text-2xl font-bold mb-1">نام شما</h2>
+                <p id="profile-username" class="text-gray-400 text-sm mb-2" dir="ltr">@username</p>
+                <p id="profile-bio" class="text-gray-300 text-sm text-center mb-4 px-6"></p>
+            </div>
+            <div class="px-4 mb-4">
+                <div class="bg-cardbg border border-borderc rounded-2xl overflow-hidden flex flex-col">
+                    <button onclick="App.logout()" class="flex items-center justify-between p-4"><span class="text-red-500">خروج</span><i class="fa-solid fa-chevron-left text-gray-500 text-xs"></i></button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-add-contact-overlay" class="fixed inset-0 bg-black/60 z-[100] opacity-0 pointer-events-none transition-opacity duration-300 flex justify-center items-end">
+        <div id="modal-add-contact" class="bottom-sheet w-full max-w-md bg-cardbg rounded-t-3xl p-6">
+            <div class="flex justify-between mb-6"><h2 class="font-bold">شروع چت جدید</h2><button onclick="closeModal('add-contact')" class="text-gray-400"><i class="fa-solid fa-xmark text-xl"></i></button></div>
+            <input type="text" id="contact-username" placeholder="نام کاربری طرف مقابل" class="w-full bg-darkbg border border-borderc rounded-xl p-4 mb-4 text-center focus:outline-none focus:border-brand text-white" dir="ltr">
+            <button onclick="App.startChatWithUser()" class="w-full bg-brand text-black font-bold py-3 rounded-xl">شروع چت</button>
+        </div>
+    </div>
+
+    <div id="call-modal">
+        <video id="remote-video" autoplay></video>
+        <video id="local-video" autoplay muted></video>
+        <div class="absolute bottom-10 flex gap-10 z-20">
+            <button onclick="App.endCall()" class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-white text-2xl shadow-lg"><i class="fa-solid fa-phone-slash"></i></button>
+        </div>
+        <div class="absolute top-10 z-20 text-white font-bold text-xl" id="call-status">در حال تماس...</div>
+    </div>
+
+    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm shadow-lg z-[200] toast pointer-events-none"><span id="toast-text"></span></div>
+
+    <script>
+        const App = {
+            ws: null, myId: "", targetId: "", recentChats: [], pc: null, localStream: null,
+            API_TOKEN: "ASRA_SECRET_KEY_123", SERVER_URL: "",
+
+            init: async function() {
+                await this.loadConfig();
+                setTimeout(() => { document.getElementById('splash-screen').classList.add('hidden'); }, 800);
+                const savedUser = localStorage.getItem('asra_user');
+                if (savedUser) { 
+                    this.myId = savedUser;
+                    this.boot(); 
+                }
+            },
+
+            loadConfig: async function() {
+                try { const r = await fetch('config.json'); const c = await r.json(); this.SERVER_URL = c.server_url; } 
+                catch (e) { this.SERVER_URL = "http://127.0.0.1:8000"; }
+            },
+
+            login: async function() {
+                this.myId = document.getElementById('username-input').value.trim().toLowerCase();
+                if (!this.myId) return this.showToast("نام کاربری را وارد کنید.");
+                localStorage.setItem('asra_user', this.myId);
+                this.boot();
+            },
+
+            boot: function() {
+                document.getElementById('main-username').innerText = "@" + this.myId;
+                document.getElementById('main-name').innerText = this.myId;
+                document.getElementById('main-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${this.myId}`;
+                
+                document.getElementById('profile-username').innerText = "@" + this.myId;
+                document.getElementById('profile-name').innerText = this.myId;
+                document.getElementById('profile-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${this.myId}`;
+                
+                this.connectWebSocket();
+                goTo('main');
+            },
+
+            connectWebSocket: function() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const host = window.location.host; 
+                this.ws = new WebSocket(`${protocol}//${host}/ws/${this.myId}`);
+
+                this.ws.onmessage = async (e) => {
+                    const data = JSON.parse(e.data);
+                    if (data.type === "history") {
+                        document.getElementById('chat-messages').innerHTML = '';
+                        for (const msg of data.data) await this.renderMessage(msg);
+                    } else if (data.type === "call_offer") {
+                        if(confirm(`تماس از ${data.sender}`)) {
+                            this.startWebRTC(data.call_type, data.sender);
+                            await this.pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+                            const answer = await this.pc.createAnswer();
+                            await this.pc.setLocalDescription(answer);
+                            this.ws.send(JSON.stringify({ type: 'call_answer', target: data.sender, answer }));
+                        } else {
+                            this.ws.send(JSON.stringify({ type: 'call_reject', target: data.sender }));
+                        }
+                    } else if (data.type === "call_answer" && this.pc) {
+                        await this.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    } else if (data.type === "call_ice" && this.pc) {
+                        await this.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    } else if (data.type === "call_reject") {
+                        alert("تماس رد شد."); this.endCall();
+                    } else {
+                        if (data.sender === this.targetId) await this.renderMessage(data);
+                        else this.addToRecentList(data.sender, data.content || "رسانه");
+                    }
+                };
+            },
+
+            startChatWithUser: function() {
+                const target = document.getElementById('contact-username').value.trim().toLowerCase();
+                if (!target || target === this.myId) return this.showToast("نامعتبر");
+                this.openChat(target);
+                closeModal('add-contact');
+            },
+
+            openChat: function(target) {
+                this.targetId = target;
+                document.getElementById('chat-user-name').innerText = target;
+                document.getElementById('chat-messages').innerHTML = '';
+                goTo('chat');
+                if(this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({ type: "get_history", target: target }));
+                }
+            },
+
+            addToRecentList: function(sender, lastMsg) {
+                const list = document.getElementById('content-chats');
+                if (!this.recentChats.includes(sender)) {
+                    this.recentChats.push(sender);
+                    if(list.querySelector('p')) list.innerHTML = '';
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between p-3 bg-cardbg border-b border-borderc cursor-pointer';
+                    div.onclick = () => this.openChat(sender);
+                    div.innerHTML = `<div class="flex items-center gap-3"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${sender}" class="w-10 h-10 rounded-full"><div><span class="font-bold text-sm">${sender}</span><br><span class="text-xs text-gray-400 truncate w-32 inline-block">${lastMsg}</span></div></div>`;
+                    list.appendChild(div);
+                }
+            },
+
+            sendMessage: function() {
+                const input = document.getElementById('chat-input');
+                const text = input.value.trim();
+                if (!text || !this.targetId) return;
+                this.ws.send(JSON.stringify({ target: this.targetId, type: "text", content: text }));
+                input.value = '';
+            },
+
+            handleFileSelect: function(e) {
+                const file = e.target.files[0];
+                if (!file || !this.targetId) return;
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const base64 = event.target.result;
+                    const type = file.type.startsWith('image') ? 'image' : 'video';
+                    this.ws.send(JSON.stringify({ target: this.targetId, type: type, content: base64 }));
+                    await this.renderMessage({ sender: this.myId, type: type, content: base64 });
+                };
+                reader.readAsDataURL(file);
+                e.target.value = ''; 
+            },
+
+            sendLocation: function() {
+                if (!this.targetId) return;
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        const loc = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                        this.ws.send(JSON.stringify({ target: this.targetId, type: "location", content: loc }));
+                    }, () => this.showToast("دسترسی به موقعیت رد شد."));
+                }
+            },
+
+            renderMessage: async function(msg) {
+                const container = document.getElementById('chat-messages');
+                const isMe = msg.sender === this.myId;
+                const div = document.createElement('div');
+                div.className = `flex flex-col ${isMe ? 'items-start' : 'items-end'} mb-2`;
+                
+                let contentHTML = '';
+                if (msg.type === 'text') contentHTML = `<div>${msg.content}</div>`;
+                else if (msg.type === 'location') contentHTML = `<a href="${msg.content}" target="_blank" class="flex items-center gap-2 text-blue-400"><i class="fa-solid fa-map-location-dot"></i> مشاهده موقعیت</a>`;
+                else if (msg.type === 'image') contentHTML = `<img src="${msg.content}" class="media-preview" onclick="window.open(this.src)">`;
+                else if (msg.type === 'video') contentHTML = `<video src="${msg.content}" controls class="media-preview"></video>`;
+
+                const bubble = document.createElement('div');
+                bubble.className = `msg-bubble relative ${isMe ? 'msg-me' : 'msg-other'}`;
+                bubble.innerHTML = contentHTML;
+                
+                const time = document.createElement('span');
+                time.className = 'text-[10px] text-gray-500 mt-1 mx-1';
+                time.textContent = new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+
+                div.appendChild(bubble); 
+                div.appendChild(time); 
+                container.appendChild(div);
+                container.scrollTop = container.scrollHeight;
+            },
+
+            startCall: async function(type) {
+                if (!this.targetId) return;
+                document.getElementById('call-modal').style.display = 'flex';
+                document.getElementById('call-status').innerText = "در حال تماس...";
+                await this.setupWebRTC(type);
+                const offer = await this.pc.createOffer();
+                await this.pc.setLocalDescription(offer);
+                this.ws.send(JSON.stringify({ type: 'call_offer', target: this.targetId, call_type: type, offer }));
+            },
+
+            setupWebRTC: async function(type) {
+                this.pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+                try {
+                    this.localStream = await navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true });
+                    document.getElementById('local-video').srcObject = this.localStream;
+                    this.localStream.getTracks().forEach(track => this.pc.addTrack(track, this.localStream));
+                } catch (err) { this.showToast("دسترسی به دوربین/میکروفون رد شد."); }
+
+                this.pc.onicecandidate = (e) => {
+                    if (e.candidate) this.ws.send(JSON.stringify({ type: 'call_ice', target: this.targetId, candidate: e.candidate }));
+                };
+                this.pc.ontrack = (e) => {
+                    document.getElementById('remote-video').srcObject = e.streams[0];
+                    document.getElementById('call-status').innerText = "در حال مکالمه";
+                };
+            },
+
+            endCall: function() {
+                if (this.pc) { this.pc.close(); this.pc = null; }
+                if (this.localStream) { this.localStream.getTracks().forEach(t => t.stop()); this.localStream = null; }
+                document.getElementById('call-modal').style.display = 'none';
+            },
+
+            logout: function() {
+                localStorage.removeItem('asra_user');
+                window.location.reload();
+            },
+
+            openModal: function(id) {
+                const overlay = document.getElementById(`modal-${id}-overlay`);
+                const modal = document.getElementById(`modal-${id}`);
+                if (overlay && modal) { overlay.classList.remove('opacity-0', 'pointer-events-none'); setTimeout(() => modal.classList.add('open'), 10); }
+            },
+
+            closeModal: function(id) {
+                const overlay = document.getElementById(`modal-${id}-overlay`);
+                const modal = document.getElementById(`modal-${id}`);
+                if (overlay && modal) { modal.classList.remove('open'); setTimeout(() => overlay.classList.add('opacity-0', 'pointer-events-none'), 300); }
+            },
+
+            showToast: function(msg) {
+                const t = document.getElementById('toast');
+                document.getElementById('toast-text').textContent = msg;
+                t.classList.add('show');
+                setTimeout(() => t.classList.remove('show'), 2000);
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => App.init());
+        
+        function goTo(page) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-'+page).classList.add('active'); }
+        function goBackFromRules() { goTo('login'); }
+        function openModal(id) { App.openModal(id); }
+        function closeModal(id) { App.closeModal(id); }
+    </script>
+</body>
+</html>

@@ -30,6 +30,8 @@
         .avatar-picker span { font-size: 12px; color: #888; }
         
         .skip-btn { background: none; border: none; color: #888; font-size: 14px; margin-top: 15px; cursor: pointer; text-decoration: underline; }
+        
+        .bale-btn { background: #4CAF50; color: white; }
     </style>
 </head>
 <body>
@@ -41,14 +43,15 @@
         <!-- مرحله ۱: شماره -->
         <div class="step active" id="step-phone">
             <input type="tel" id="phoneNumber" class="auth-input" placeholder="شماره موبایل (مثلاً 09123456789)" style="direction: ltr;">
-            <button class="auth-btn" onclick="sendCode()" id="sendCodeBtn">دریافت کد ورود</button>
+            <button class="auth-btn bale-btn" onclick="goToBale()" id="sendCodeBtn">ورود با بله</button>
         </div>
 
         <!-- مرحله ۲: کد تایید -->
         <div class="step" id="step-code">
-            <p style="margin-bottom: 15px; font-size: 14px;">کد ۶ رقمی ارسال شده را وارد کنید:</p>
+            <p style="margin-bottom: 15px; font-size: 14px;">کد ۶ رقمی که در بله دریافت کردید را وارد کنید:</p>
             <input type="text" id="otpCode" class="auth-input" placeholder="------" maxlength="6" style="letter-spacing: 10px; font-size: 24px; direction: ltr;">
             <button class="auth-btn" onclick="verifyCode()" id="verifyBtn">تایید</button>
+            <p style="margin-top: 15px; font-size: 12px; color: #888;">اگر کد را دریافت نکردید، دوباره روی دکمه «ورود با بله» بزنید.</p>
         </div>
 
         <!-- مرحله ۳: پروفایل -->
@@ -68,76 +71,40 @@
     </div>
 
     <script>
-        // 1. لینک جدید Pinggy (از تصویر شما)
-        const PINGGY_URL = 'https://ciwhn-2a02-4540-910e-3086-1c7a-6e65-f922-106f.free.pinggy.net';
-        
-        // 2. استفاده از پروکسی واسط برای دور زدن CORS
-        const PROXY_URL = 'https://corsproxy.io/?';
+        // نام کاربری ربات بله شما
+        const BALE_BOT_USERNAME = 'Aras2Chat1bot'; 
         
         let userPhone = '';
         let tempPic = '';
 
-        // مرحله ۱: ارسال درخواست به سرور گوشی (Termux) با پروکسی
-        async function sendCode() {
+        // مرحله ۱: رفتن به بله
+        function goToBale() {
             const phone = document.getElementById('phoneNumber').value.trim();
             if (!phone || phone.length < 10) return alert('شماره موبایل را صحیح وارد کنید');
             
             userPhone = phone;
-            const btn = document.getElementById('sendCodeBtn');
-            btn.innerText = 'در حال ارسال پیامک...';
-            btn.disabled = true;
-
-            try {
-                const response = await fetch(PROXY_URL + encodeURIComponent(PINGGY_URL + '/send-otp'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: phone })
-                });
-
-                if (response.ok) {
-                    document.getElementById('step-phone').classList.remove('active');
-                    document.getElementById('step-code').classList.add('active');
-                } else {
-                    alert('خطا در ارسال پیامک از سرور');
-                    btn.innerText = 'دریافت کد ورود';
-                    btn.disabled = false;
-                }
-            } catch (error) {
-                alert('خطا در ارتباط با سرور. مطمئن شوید تونل روشن است.');
-                console.error(error);
-                btn.innerText = 'دریافت کد ورود';
-                btn.disabled = false;
-            }
+            
+            // باز کردن ربات بله
+            const baleUrl = `https://ble.ir/${BALE_BOT_USERNAME}`;
+            window.open(baleUrl, '_blank');
+            
+            // رفتن به مرحله کد
+            document.getElementById('step-phone').classList.remove('active');
+            document.getElementById('step-code').classList.add('active');
         }
 
-        // مرحله ۲: تایید کد با پروکسی
-        async function verifyCode() {
+        // مرحله ۲: تایید کد
+        function verifyCode() {
             const code = document.getElementById('otpCode').value.trim();
             if (code.length !== 6) return alert('کد باید ۶ رقم باشد');
             
-            const btn = document.getElementById('verifyBtn');
-            btn.innerText = 'در حال بررسی...';
-            btn.disabled = true;
-
-            try {
-                const response = await fetch(PROXY_URL + encodeURIComponent(PINGGY_URL + '/verify-otp'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: userPhone, code: code })
-                });
-
-                if (response.ok) {
-                    document.getElementById('step-code').classList.remove('active');
-                    document.getElementById('step-profile').classList.add('active');
-                } else {
-                    alert('کد وارد شده اشتباه یا منقضی شده است');
-                    btn.innerText = 'تایید';
-                    btn.disabled = false;
-                }
-            } catch (error) {
-                alert('خطا در ارتباط با سرور');
-                btn.innerText = 'تایید';
-                btn.disabled = false;
+            // ⚠️ برای تست، کد 123456 را قبول می‌کنیم.
+            // در نسخه واقعی، باید کد را از ربات دریافت و مقایسه کنیم.
+            if (code === '123456') {
+                document.getElementById('step-code').classList.remove('active');
+                document.getElementById('step-profile').classList.add('active');
+            } else {
+                alert('کد اشتباه است. فعلاً برای تست از کد 123456 استفاده کنید.');
             }
         }
 
@@ -170,7 +137,7 @@
             };
             
             localStorage.setItem('asra_user', JSON.stringify(userObj));
-            window.location.href = 'chat.html'; // هدایت به برنامه اصلی
+            window.location.href = 'chat.html';
         }
 
         function skipProfileDetails() {

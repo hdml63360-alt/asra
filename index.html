@@ -68,13 +68,16 @@
     </div>
 
     <script>
-        // لینک جدید از خروجی Pinggy (با co+)
-        const SMS_SERVER_URL = 'https://ciwhn-2a02-4540-910e-3086-1c7a-6e65-f922-106f.free.pinggy.net';
+        // 1. لینک جدید Pinggy (از تصویر شما)
+        const PINGGY_URL = 'https://ciwhn-2a02-4540-910e-3086-1c7a-6e65-f922-106f.free.pinggy.net';
+        
+        // 2. استفاده از پروکسی واسط برای دور زدن CORS
+        const PROXY_URL = 'https://corsproxy.io/?';
         
         let userPhone = '';
         let tempPic = '';
 
-        // مرحله ۱: ارسال درخواست به سرور گوشی (Termux)
+        // مرحله ۱: ارسال درخواست به سرور گوشی (Termux) با پروکسی
         async function sendCode() {
             const phone = document.getElementById('phoneNumber').value.trim();
             if (!phone || phone.length < 10) return alert('شماره موبایل را صحیح وارد کنید');
@@ -85,7 +88,7 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch(`${SMS_SERVER_URL}/send-otp`, {
+                const response = await fetch(PROXY_URL + encodeURIComponent(PINGGY_URL + '/send-otp'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phone: phone })
@@ -100,14 +103,14 @@
                     btn.disabled = false;
                 }
             } catch (error) {
-                alert('خطا در ارتباط با سرور. مطمئن شوید تونل روشن است و با دستور co+ اجرا شده است.');
+                alert('خطا در ارتباط با سرور. مطمئن شوید تونل روشن است.');
                 console.error(error);
                 btn.innerText = 'دریافت کد ورود';
                 btn.disabled = false;
             }
         }
 
-        // مرحله ۲: تایید کد
+        // مرحله ۲: تایید کد با پروکسی
         async function verifyCode() {
             const code = document.getElementById('otpCode').value.trim();
             if (code.length !== 6) return alert('کد باید ۶ رقم باشد');
@@ -117,7 +120,7 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch(`${SMS_SERVER_URL}/verify-otp`, {
+                const response = await fetch(PROXY_URL + encodeURIComponent(PINGGY_URL + '/verify-otp'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phone: userPhone, code: code })

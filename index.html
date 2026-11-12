@@ -9,149 +9,106 @@
         :root { --kakao-yellow: #FEE500; --kakao-dark: #3C1E1E; --kakao-gray: #F5F5F5; --bg-main: #FFFFFF; --text-main: #191919; --border-color: #E5E5E5; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg-main); height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        
         .login-container { width: 100%; max-width: 400px; padding: 30px; text-align: center; }
         .logo { font-size: 40px; font-weight: 800; color: var(--kakao-dark); margin-bottom: 10px; letter-spacing: -2px; }
         .subtitle { font-size: 14px; color: #888; margin-bottom: 30px; }
-        
         .auth-input { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 16px; outline: none; background: var(--kakao-gray); text-align: center; transition: 0.2s; }
         .auth-input:focus { border-color: var(--kakao-dark); background: #fff; }
-        
         .auth-btn { width: 100%; padding: 15px; background: var(--kakao-yellow); color: var(--kakao-dark); border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .auth-btn:active { transform: scale(0.98); }
-        .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
         .step { display: none; }
         .step.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
         .avatar-picker { width: 100px; height: 100px; border-radius: 50%; background: var(--kakao-gray); margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; border: 2px dashed #ccc; }
         .avatar-picker img { width: 100%; height: 100%; object-fit: cover; }
         .avatar-picker span { font-size: 12px; color: #888; }
-        
         .skip-btn { background: none; border: none; color: #888; font-size: 14px; margin-top: 15px; cursor: pointer; text-decoration: underline; }
-        
         .bale-btn { background: #4CAF50; color: white; }
     </style>
 </head>
 <body>
-
     <div class="login-container">
         <div class="logo">ASRA</div>
         <div class="subtitle">پیام‌رسان امن</div>
-
-        <!-- مرحله ۱: شماره -->
         <div class="step active" id="step-phone">
             <input type="tel" id="phoneNumber" class="auth-input" placeholder="شماره موبایل (مثلاً 09123456789)" style="direction: ltr;">
-            <button class="auth-btn bale-btn" onclick="goToBale()" id="sendCodeBtn">ورود با بله</button>
+            <button class="auth-btn bale-btn" onclick="goToBale()">ورود با بله</button>
         </div>
-
-        <!-- مرحله ۲: کد تایید -->
         <div class="step" id="step-code">
             <p style="margin-bottom: 15px; font-size: 14px;">کد ۶ رقمی که در بله دریافت کردید را وارد کنید:</p>
             <input type="text" id="otpCode" class="auth-input" placeholder="------" maxlength="6" style="letter-spacing: 10px; font-size: 24px; direction: ltr;">
-            <button class="auth-btn" onclick="verifyCode()" id="verifyBtn">تایید</button>
-            <p style="margin-top: 15px; font-size: 12px; color: #888;">اگر کد را دریافت نکردید، دوباره روی دکمه «ورود با بله» بزنید.</p>
+            <button class="auth-btn" onclick="verifyCode()">تایید</button>
         </div>
-
-        <!-- مرحله ۳: پروفایل -->
         <div class="step" id="step-profile">
             <div class="avatar-picker" onclick="document.getElementById('profilePicInput').click()">
                 <span>انتخاب عکس</span>
                 <input type="file" id="profilePicInput" accept="image/*" style="display: none;" onchange="previewProfilePic(event)">
             </div>
-            
             <input type="text" id="displayName" class="auth-input" placeholder="نام نمایشی (اجباری)">
             <input type="text" id="username" class="auth-input" placeholder="نام کاربری (اختیاری)" style="direction: ltr;">
             <input type="text" id="bio" class="auth-input" placeholder="بیوگرافی (اختیاری)">
-            
             <button class="auth-btn" onclick="completeRegistration()">ورود به برنامه</button>
-            <button class="skip-btn" onclick="skipProfileDetails()">رد کردن نام کاربری و بیو</button>
+            <button class="skip-btn" onclick="skipProfileDetails()">رد کردن</button>
         </div>
     </div>
 
     <script>
-        // نام کاربری ربات بله شما
         const BALE_BOT_USERNAME = 'Aras2Chat1bot'; 
-        
-        let userPhone = '';
         let tempPic = '';
+        let generatedCode = '';
 
-        // مرحله ۱: رفتن به بله
         function goToBale() {
             const phone = document.getElementById('phoneNumber').value.trim();
             if (!phone || phone.length < 10) return alert('شماره موبایل را صحیح وارد کنید');
-            
-            userPhone = phone;
-            
-            // باز کردن ربات بله
-            const baleUrl = `https://ble.ir/${BALE_BOT_USERNAME}`;
-            window.open(baleUrl, '_blank');
-            
-            // رفتن به مرحله کد
+            generatedCode = String(Math.floor(100000 + Math.random() * 900000));
+            localStorage.setItem('asra_expected_code', generatedCode);
+            window.open(`https://ble.ir/${BALE_BOT_USERNAME}?start=${generatedCode}`, '_blank');
             document.getElementById('step-phone').classList.remove('active');
             document.getElementById('step-code').classList.add('active');
         }
 
-        // مرحله ۲: تایید کد
         function verifyCode() {
             const code = document.getElementById('otpCode').value.trim();
             if (code.length !== 6) return alert('کد باید ۶ رقم باشد');
-            
-            // ⚠️ برای تست، کد 123456 را قبول می‌کنیم.
-            // در نسخه واقعی، باید کد را از ربات دریافت و مقایسه کنیم.
-            if (code === '123456') {
+            if (code === localStorage.getItem('asra_expected_code')) {
+                localStorage.removeItem('asra_expected_code');
                 document.getElementById('step-code').classList.remove('active');
                 document.getElementById('step-profile').classList.add('active');
             } else {
-                alert('کد اشتباه است. فعلاً برای تست از کد 123456 استفاده کنید.');
+                alert('کد اشتباه است.');
             }
         }
 
-        // مرحله ۳: تنظیم پروفایل
         function previewProfilePic(e) {
             const file = e.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = (ev) => {
                 tempPic = ev.target.result;
-                const picker = document.querySelector('.avatar-picker');
-                picker.innerHTML = `<img src="${tempPic}">`;
-                picker.appendChild(e.target); 
+                document.querySelector('.avatar-picker').innerHTML = `<img src="${tempPic}">`;
             };
             reader.readAsDataURL(file);
         }
 
         function completeRegistration() {
             const displayName = document.getElementById('displayName').value.trim();
-            const username = document.getElementById('username').value.trim();
-            const bio = document.getElementById('bio').value.trim();
-            
             if (!displayName) return alert('نام نمایشی اجباری است!');
-            
-            const userObj = {
-                phone: userPhone,
-                name: displayName,
-                username: username || 'user_' + Math.random().toString(36).substring(2, 6),
-                bio: bio,
-                pic: tempPic
-            };
-            
-            localStorage.setItem('asra_user', JSON.stringify(userObj));
+            const userId = 'user_' + Math.random().toString(36).substring(2, 10);
+            localStorage.setItem('asra_user', JSON.stringify({
+                userId: userId, name: displayName,
+                username: document.getElementById('username').value.trim() || 'user_' + Math.random().toString(36).substring(2, 6),
+                bio: document.getElementById('bio').value.trim(), pic: tempPic
+            }));
             window.location.href = 'chat.html';
         }
 
         function skipProfileDetails() {
             const displayName = document.getElementById('displayName').value.trim();
-            if (!displayName) return alert('لطفاً ابتدا نام نمایشی را وارد کنید');
-            
-            const userObj = {
-                phone: userPhone,
-                name: displayName,
-                username: 'user_' + Math.random().toString(36).substring(2, 6),
-                bio: '',
-                pic: ''
-            };
-            localStorage.setItem('asra_user', JSON.stringify(userObj));
+            if (!displayName) return alert('لطفاً نام نمایشی را وارد کنید');
+            localStorage.setItem('asra_user', JSON.stringify({
+                userId: 'user_' + Math.random().toString(36).substring(2, 10),
+                name: displayName, username: 'user_' + Math.random().toString(36).substring(2, 6),
+                bio: '', pic: ''
+            }));
             window.location.href = 'chat.html';
         }
     </script>

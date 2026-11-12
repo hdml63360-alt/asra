@@ -40,7 +40,7 @@
             <button class="auth-btn" onclick="verifyCode()">تایید</button>
         </div>
         <div class="step" id="step-profile">
-            <div class="avatar-picker" onclick="document.getElementById('profilePicInput').click()">
+            <div class="avatar-picker" id="avatarPicker" onclick="document.getElementById('profilePicInput').click()">
                 <span>انتخاب عکس</span>
                 <input type="file" id="profilePicInput" accept="image/*" style="display: none;" onchange="previewProfilePic(event)">
             </div>
@@ -56,6 +56,40 @@
         const BALE_BOT_USERNAME = 'Aras2Chat1bot'; 
         let tempPic = '';
         let generatedCode = '';
+
+        // بررسی اطلاعات بازگشتی از بله
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const baleName = urlParams.get('bale_name');
+            const baleUsername = urlParams.get('bale_username');
+            const baleBio = urlParams.get('bale_bio');
+            const balePic = urlParams.get('bale_pic');
+            const balePhone = urlParams.get('bale_phone');
+
+            if (baleName || balePhone) {
+                // اطلاعات از بله آمده، مستقیم به مرحله پروفایل برو
+                document.getElementById('step-phone').classList.remove('active');
+                document.getElementById('step-profile').classList.add('active');
+
+                // پر کردن فیلدها
+                document.getElementById('displayName').value = baleName || '';
+                document.getElementById('username').value = baleUsername || '';
+                document.getElementById('bio').value = baleBio || '';
+                
+                if (balePic) {
+                    tempPic = balePic;
+                    document.getElementById('avatarPicker').innerHTML = `<img src="${balePic}">`;
+                }
+
+                // ذخیره شماره برای استفاده در ثبت‌نام
+                if (balePhone) {
+                    localStorage.setItem('asra_temp_phone', balePhone);
+                }
+
+                // پاک کردن پارامترها از URL (برای امنیت)
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
 
         function goToBale() {
             const phone = document.getElementById('phoneNumber').value.trim();
@@ -84,7 +118,7 @@
             const reader = new FileReader();
             reader.onload = (ev) => {
                 tempPic = ev.target.result;
-                document.querySelector('.avatar-picker').innerHTML = `<img src="${tempPic}">`;
+                document.getElementById('avatarPicker').innerHTML = `<img src="${tempPic}">`;
             };
             reader.readAsDataURL(file);
         }
@@ -92,11 +126,18 @@
         function completeRegistration() {
             const displayName = document.getElementById('displayName').value.trim();
             if (!displayName) return alert('نام نمایشی اجباری است!');
+            
+            const phone = localStorage.getItem('asra_temp_phone') || '';
+            localStorage.removeItem('asra_temp_phone');
+            
             const userId = 'user_' + Math.random().toString(36).substring(2, 10);
             localStorage.setItem('asra_user', JSON.stringify({
-                userId: userId, name: displayName,
+                userId: userId, 
+                name: displayName,
                 username: document.getElementById('username').value.trim() || 'user_' + Math.random().toString(36).substring(2, 6),
-                bio: document.getElementById('bio').value.trim(), pic: tempPic
+                bio: document.getElementById('bio').value.trim(), 
+                pic: tempPic,
+                phone: phone
             }));
             window.location.href = 'chat.html';
         }
@@ -104,10 +145,15 @@
         function skipProfileDetails() {
             const displayName = document.getElementById('displayName').value.trim();
             if (!displayName) return alert('لطفاً نام نمایشی را وارد کنید');
+            
+            const phone = localStorage.getItem('asra_temp_phone') || '';
+            localStorage.removeItem('asra_temp_phone');
+            
             localStorage.setItem('asra_user', JSON.stringify({
                 userId: 'user_' + Math.random().toString(36).substring(2, 10),
-                name: displayName, username: 'user_' + Math.random().toString(36).substring(2, 6),
-                bio: '', pic: ''
+                name: displayName, 
+                username: 'user_' + Math.random().toString(36).substring(2, 6),
+                bio: '', pic: '', phone: phone
             }));
             window.location.href = 'chat.html';
         }

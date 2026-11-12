@@ -68,8 +68,8 @@
     </div>
 
     <script>
-        // این لینک را از خروجی Serveo کپی کردم
-        const SMS_SERVER_URL = 'https://0884014c94a470e0-93-110-213-110.serveousercontent.com';
+        // لینک جدید از خروجی Pinggy (با co+)
+        const SMS_SERVER_URL = 'https://ciwhn-2a02-4540-910e-3086-1c7a-6e65-f922-106f.free.pinggy.net';
         
         let userPhone = '';
         let tempPic = '';
@@ -100,7 +100,7 @@
                     btn.disabled = false;
                 }
             } catch (error) {
-                alert('خطا در ارتباط با سرور. مطمئن شوید تونل روشن است.');
+                alert('خطا در ارتباط با سرور. مطمئن شوید تونل روشن است و با دستور co+ اجرا شده است.');
                 console.error(error);
                 btn.innerText = 'دریافت کد ورود';
                 btn.disabled = false;
@@ -146,7 +146,6 @@
                 tempPic = ev.target.result;
                 const picker = document.querySelector('.avatar-picker');
                 picker.innerHTML = `<img src="${tempPic}">`;
-                // برای امکان تغییر مجدد عکس، اینپوت را نگه می‌داریم
                 picker.appendChild(e.target); 
             };
             reader.readAsDataURL(file);
